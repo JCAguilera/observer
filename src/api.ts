@@ -9,8 +9,8 @@ import { Logger } from "./util";
 const program = new Command();
 
 program
-  .version("v0.0.1")
-  .description("This is a dummy demo CLI.")
+  .version("v1.0.3")
+  .description("ObserverMC CLI.")
   .option("-c, --config <path>", "Configuration file path")
   .parse(process.argv);
 
