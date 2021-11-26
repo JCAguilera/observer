@@ -1,4 +1,4 @@
-import { MinecraftServerEventsTriggers } from "./../../dist/minecraft-server/MinecraftServerEvents.d";
+import { MinecraftServerEventsTriggers } from "./MinecraftServerEvents";
 import { MinecraftServerType } from "./MinecraftServerType";
 
 export interface MinecraftServerOptions {

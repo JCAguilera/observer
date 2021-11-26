@@ -1,7 +1,4 @@
 import dayjs from "dayjs";
-import fs from "fs";
-import crypto from "crypto";
-import { ObserverOptions } from "./observer/ObserverOptions";
 
 export class Logger {
   static log(message: string, ...optionalParams: any[]) {
