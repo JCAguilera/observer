@@ -1,4 +1,4 @@
-import { loadConfig, Logger } from "../util";
+import { Logger } from "../util";
 import { ObserverOptions } from "./ObserverOptions";
 import { MinecraftServer } from "../minecraft-server/MinecraftServer";
 export class ObserverWrapper {

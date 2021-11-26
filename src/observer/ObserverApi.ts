@@ -1,5 +1,6 @@
+import { ObserverOptions } from "./ObserverOptions";
 import { ObserverWrapper } from "./ObserverWrapper";
-import { loadConfig, Logger } from "../util";
+import { Logger } from "../util";
 import express from "express";
 import * as http from "http";
 import { Server, Socket } from "socket.io";
@@ -8,12 +9,12 @@ export class ObserverApi {
   private _app = express();
   private _server = http.createServer(this._app);
   private _io = new Server(this._server);
-  private _config = loadConfig();
-  private _wrapper = new ObserverWrapper(this._config);
+  private _wrapper;
   private _sockets: { [key: string]: string } = {};
 
-  constructor() {
-    console.log("### Observer API ###\n");
+  constructor(private _config: ObserverOptions) {
+    console.log("### ObserverMC API ###\n");
+    this._wrapper = new ObserverWrapper(this._config);
     for (const serverName of this._wrapper.servers) {
       this._wrapper
         .getServer(serverName)
@@ -28,8 +29,12 @@ export class ObserverApi {
             }
           }
         });
+      Logger.log(`Loaded server "${serverName}"!`);
     }
-    Logger.log(`Loaded ${Object.keys(this._wrapper.servers).length} servers`);
+    const serversCount = Object.keys(this._wrapper.servers).length;
+    Logger.log(
+      `Loaded ${serversCount} server${serversCount !== 1 ? "s" : ""}.`
+    );
     // Express
     this._app.get("/", (req, res) => {
       res.end("<h1>Observer HTTP API: Coming soon</h1>");
@@ -115,7 +120,7 @@ export class ObserverApi {
     // HTTP Server
     port = port || this._config.port;
     this._server.listen(port, () => {
-      Logger.log("Listening on *:" + port);
+      Logger.log("Listening on http://localhost:" + port);
     });
   }
 
