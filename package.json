@@ -1,0 +1,41 @@
+{
+  "name": "observer",
+  "version": "1.0.0",
+  "description": "A Node.js Minecraft Server Wrapper and API",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "npm run build && node dist/test.js",
+    "test:clean": "npm run build:clean && node dist/test.js",
+    "build": "tsc",
+    "build:clean": "rimraf dist && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JCAguilera/observer.git"
+  },
+  "keywords": [
+    "minecraft",
+    "minecraft-server",
+    "wrapper"
+  ],
+  "author": "JC Aguilera",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JCAguilera/observer/issues"
+  },
+  "homepage": "https://github.com/JCAguilera/observer#readme",
+  "dependencies": {
+    "@scriptserver/core": "^2.0.4",
+    "@scriptserver/essentials": "^2.0.4",
+    "dayjs": "^1.10.7",
+    "express": "^4.17.1",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "socket.io": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.13",
+    "@types/node": "^16.11.10",
+    "rimraf": "^3.0.2"
+  }
+}
