@@ -1,3 +1,4 @@
+import { MinecraftServerWhitelist } from "./MinecraftServerWhitelist";
 import { MinecraftServerEventParser } from "./MinecraftServerEvents";
 import { Config, DeepPartial, ScriptServer } from "@scriptserver/core";
 import { Logger } from "../util";
@@ -42,6 +43,8 @@ export class MinecraftServer {
   private _hasRcon = false;
   /** Event parser */
   private _eventParser: MinecraftServerEventParser;
+  /** Whitelist */
+  private _whitelist: MinecraftServerWhitelist;
   /** Handles files on server folder */
   // private _settings: MinecraftServerSettings;
 
@@ -55,6 +58,8 @@ export class MinecraftServer {
       options.type,
       options.events
     );
+    // Setup whitelist
+    this._whitelist = new MinecraftServerWhitelist(options.path);
     // Setup script server
     const scriptServerOptions: DeepPartial<Config> = {
       javaServer: {
@@ -239,5 +244,9 @@ export class MinecraftServer {
 
   get config() {
     return this._config;
+  }
+
+  get whitelist() {
+    return this._whitelist;
   }
 }

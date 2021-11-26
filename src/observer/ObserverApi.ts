@@ -108,6 +108,50 @@ export class ObserverApi {
         }
       });
 
+      socket.on(
+        "whitelist",
+        async (
+          serverName,
+          data: {
+            action: "list" | "add" | "remove" | "clear";
+            username?: string;
+          },
+          callbackFn: Function
+        ) => {
+          if (this._isAuthorized(socket.id)) {
+            Logger.log(
+              this._getName(socket.id) +
+                " invoked whitelist " +
+                data.action +
+                "!"
+            );
+            let ret: { uuid: string; name: string }[] | boolean;
+            switch (data.action) {
+              case "list":
+                ret = this._wrapper.getServer(serverName).whitelist.array;
+                break;
+              case "add":
+                ret = await this._wrapper
+                  .getServer(serverName)
+                  .whitelist.add(data.username || "");
+                break;
+              case "remove":
+                ret = await this._wrapper
+                  .getServer(serverName)
+                  .whitelist.remove(data.username || "");
+                break;
+              case "clear":
+                ret = this._wrapper.getServer(serverName).whitelist.clear();
+                break;
+            }
+            callbackFn(
+              ret,
+              this._wrapper.getServer(serverName).whitelist.lastError
+            );
+          }
+        }
+      );
+
       socket.on("disconnect", () => {
         if (this._isAuthorized(socket.id)) {
           Logger.log(this._getName(socket.id) + " disconnected");
