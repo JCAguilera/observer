@@ -1,3 +1,4 @@
+import { MinecraftServerEventsTriggers } from "./../../dist/minecraft-server/MinecraftServerEvents.d";
 import { MinecraftServerType } from "./MinecraftServerType";
 
 export interface MinecraftServerOptions {
@@ -19,4 +20,6 @@ export interface MinecraftServerOptions {
     port: number;
     password: string;
   };
+  /** (Optional) Custom events defined as {[eventName: string]: RegExp | string} */
+  events?: MinecraftServerEventsTriggers;
 }

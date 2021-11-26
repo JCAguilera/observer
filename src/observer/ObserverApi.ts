@@ -25,7 +25,8 @@ export class ObserverApi {
             if (!!socket) {
               // If socket exists, send events
               socket.emit(`event:${event}`, serverName, data);
-              socket.emit(`event:any`, serverName, { event, data });
+              if (event !== "line")
+                socket.emit(`event:any`, serverName, { name: event, data });
             }
           }
         });

@@ -1,4 +1,4 @@
-import { DefaultTriggers, getEvent } from "./MinecraftServerEvents";
+import { MinecraftServerEventParser } from "./MinecraftServerEvents";
 import { Config, DeepPartial, ScriptServer } from "@scriptserver/core";
 import { Logger } from "../util";
 import { MinecraftServerOptions } from "./MinecraftServerOptions";
@@ -9,8 +9,6 @@ enum Status {
   Online = "online",
   Stopping = "stopping",
 }
-
-// const rconRunning = /\[(?<time>(?:[01]\d|2[0123]):(?:[012345]\d):(?:[012345]\d)) INFO\]: RCON running on (?<ip>(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])):(?<port>[0-9]+) */g;
 
 export class MinecraftServer {
   /** JServer Options */
@@ -42,6 +40,8 @@ export class MinecraftServer {
   private _timeout = 0; // mins
   /** Checks if server has rcon connection */
   private _hasRcon = false;
+  /** Event parser */
+  private _eventParser: MinecraftServerEventParser;
   /** Handles files on server folder */
   // private _settings: MinecraftServerSettings;
 
@@ -50,6 +50,11 @@ export class MinecraftServer {
     // Setup timeout
     this._stopTimeoutEnabled = !!options.autostop;
     this._timeout = options.autostop ? options.autostop : 0;
+    // Event parser
+    this._eventParser = new MinecraftServerEventParser(
+      options.type,
+      options.events
+    );
     // Setup script server
     const scriptServerOptions: DeepPartial<Config> = {
       javaServer: {
@@ -59,8 +64,8 @@ export class MinecraftServer {
         pipeStdout: false,
         flavorSpecific: {
           default: {
-            startedRegExp: DefaultTriggers[options.type].online,
-            stoppedRegExp: DefaultTriggers[options.type].offline,
+            startedRegExp: RegExp(this._eventParser.triggers.online),
+            stoppedRegExp: RegExp(this._eventParser.triggers.offline),
           },
         },
       },
@@ -146,10 +151,8 @@ export class MinecraftServer {
 
   onConsole(line: string) {
     this._events.line(line);
-    var e = getEvent(line, this.config.type);
-    if (e.event !== "line") {
-      this._events.any(e.event, e.data);
-    }
+    var e = this._eventParser.parse(line);
+    this._events.any(e.event, e.data);
     if (e.event === "starting") {
       this._setStatus(Status.Starting);
     }
