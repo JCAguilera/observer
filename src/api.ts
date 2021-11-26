@@ -5,7 +5,6 @@ import { Command } from "commander";
 import { ObserverApi } from "./observer/ObserverApi";
 import { ObserverOptions } from "./observer/ObserverOptions";
 import { Logger } from "./util";
-import { Console } from "console";
 
 const program = new Command();
 
