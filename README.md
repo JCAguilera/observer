@@ -11,6 +11,7 @@ Some features are:
 - Send commands to the servers.
 - Listen to events such as status changes, user login and logout, and get extra data with each event.
 - Connect multiple client apps using Socket.io and simple api key authentication.
+- Listen to custom events defined using RegEx
 
 > Note that this is a WIP and it was built for my own use. I will try to
 > keep this updated in the future.
@@ -40,6 +41,9 @@ To configure Observer just open the generated `config.json`. Sample config:
             "host": "localhost",
             "port": 25575,
             "password": "test123"
+          },
+          "events": {
+            "user-left": "/\\[(?<time>(?:[01]\\d|2[0123]):(?:[012345]\\d):(?:[012345]\\d)) INFO\\]: (?<user>\\w+) left the game */g"
           }
         }
       ],
@@ -58,6 +62,7 @@ From top to bottom the options are:
 		- `host`: RCON host
 		- `port`: RCON port
 		- `password`: RCON password
+  - `events`: (Optional) Custom events.
 - `apiKey`: Secret key for client authentication
 - `port`: API Server port
 
