@@ -3,6 +3,7 @@ import { MinecraftServerEventParser } from "./MinecraftServerEvents";
 import { Config, DeepPartial, ScriptServer } from "@scriptserver/core";
 import { Logger } from "../util";
 import { MinecraftServerOptions } from "./MinecraftServerOptions";
+import { MinecraftServerProperties } from "./MinecraftServerProperties";
 
 enum Status {
   Offline = "offline",
@@ -41,6 +42,8 @@ export class MinecraftServer {
   private _timeout = 0; // mins
   /** Event parser */
   private _eventParser: MinecraftServerEventParser;
+  /** Server properties */
+  private _properties: MinecraftServerProperties;
   /** Whitelist */
   private _whitelist: MinecraftServerWhitelist;
 
@@ -54,8 +57,13 @@ export class MinecraftServer {
       options.type,
       options.events
     );
+    // Setup server properties
+    this._properties = new MinecraftServerProperties(options.path);
     // Setup whitelist
-    this._whitelist = new MinecraftServerWhitelist(options.path);
+    this._whitelist = new MinecraftServerWhitelist(
+      options.path,
+      this._properties.get("online_mode") as boolean
+    );
     // Setup script server
     const scriptServerOptions: DeepPartial<Config> = {
       javaServer: {
@@ -243,5 +251,9 @@ export class MinecraftServer {
 
   get whitelist() {
     return this._whitelist;
+  }
+
+  get properties() {
+    return this._properties;
   }
 }
