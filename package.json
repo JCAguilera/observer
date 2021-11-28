@@ -1,12 +1,14 @@
 {
   "name": "observermc",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A Node.js wrapper and API for multiple Minecraft Servers",
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/api.js",
     "test": "npm run build && node dist/test.js",
     "test:clean": "npm run build:clean && node dist/test.js",
+    "api": "npm run build && node dist/api.js --config example-config.json",
+    "api:clean": "npm run build:clean && node dist/api.js --config example-config.json",
     "build": "tsc",
     "build:clean": "rimraf dist && tsc"
   },
