@@ -16,8 +16,6 @@ program
 
 const opts = program.opts();
 
-console.log(opts);
-
 if (opts.config) {
   const config = loadConfig(opts.config);
   const observerApi = new ObserverApi(config);

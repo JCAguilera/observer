@@ -39,14 +39,10 @@ export class MinecraftServer {
   private _status: Status = Status.Offline;
   /** Server stop timeout in minutes */
   private _timeout = 0; // mins
-  /** Checks if server has rcon connection */
-  private _hasRcon = false;
   /** Event parser */
   private _eventParser: MinecraftServerEventParser;
   /** Whitelist */
   private _whitelist: MinecraftServerWhitelist;
-  /** Handles files on server folder */
-  // private _settings: MinecraftServerSettings;
 
   constructor(options: MinecraftServerOptions) {
     this._config = options; // Save options
@@ -77,7 +73,6 @@ export class MinecraftServer {
     };
     if (options.rcon) {
       scriptServerOptions["rconConnection"] = options.rcon;
-      this._hasRcon = true;
     }
     this._scriptServer = new ScriptServer(scriptServerOptions);
   }
