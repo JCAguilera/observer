@@ -10,26 +10,24 @@ export class ObserverApi {
   private _server = http.createServer(this._app);
   private _io = new Server(this._server);
   private _wrapper;
-  private _sockets: { [key: string]: string } = {};
+  private _sockets: { [id: string]: string } = {};
 
   constructor(private _config: ObserverOptions) {
     console.log("### ObserverMC API ###\n");
     this._wrapper = new ObserverWrapper(this._config);
     for (const serverName of this._wrapper.servers) {
-      this._wrapper
-        .getServer(serverName)
-        .onEvent((event: string, data: any) => {
-          for (let id in this._sockets) {
-            // For every authorized socket
-            const socket = this._io.sockets.sockets.get(id); // Get current socket
-            if (!!socket) {
-              // If socket exists, send events
-              socket.emit(`event:${event}`, serverName, data);
-              if (event !== "line")
-                socket.emit(`event:any`, serverName, { name: event, data });
-            }
+      this._getServer(serverName).onEvent((event: string, data: any) => {
+        for (let id in this._sockets) {
+          // For every authorized socket
+          const socket = this._io.sockets.sockets.get(id); // Get current socket
+          if (!!socket) {
+            // If socket exists, send events
+            socket.emit(`event:${event}`, serverName, data);
+            if (event !== "line")
+              socket.emit(`event:any`, serverName, { name: event, data });
           }
-        });
+        }
+      });
       Logger.log(`Loaded server "${serverName}"!`);
     }
     const serversCount = Object.keys(this._wrapper.servers).length;
@@ -46,13 +44,13 @@ export class ObserverApi {
 
       let conn = setTimeout(() => {
         socket.disconnect(true);
-      }, 30000);
+      }, 5000);
 
       socket.on(
         "authenticate",
         (name: string, key: string, callbackFn: Function) => {
           if (this._isAuthorized(socket.id)) {
-            callbackFn(true);
+            callbackFn(true, "authenticated");
             return;
           }
           const logged = key === this._config.apiKey;
@@ -60,17 +58,23 @@ export class ObserverApi {
             this._sockets[socket.id] = name; // add to authorized sockets lists
             clearInterval(conn);
             Logger.log(name + " authenticated!");
+            callbackFn(logged);
           } else {
             Logger.error(name + " could not authenticate!");
+            callbackFn(logged, "authentication");
           }
-          callbackFn(logged);
         }
       );
 
       socket.on("start", async (serverName: string, callbackFn: Function) => {
         if (this._isAuthorized(socket.id)) {
           Logger.log(this._getName(socket.id) + " invoked start!");
-          const started = await this._wrapper.start(serverName);
+          const server = this._getServer(serverName);
+          if (!server) {
+            callbackFn(false, "server-not-found");
+            return;
+          }
+          const started = await server.start();
           callbackFn(started);
         }
       });
@@ -78,7 +82,12 @@ export class ObserverApi {
       socket.on("stop", (serverName: string, callbackFn: Function) => {
         if (this._isAuthorized(socket.id)) {
           Logger.log(this._getName(socket.id) + " invoked stop!");
-          const stopped = this._wrapper.stop(serverName);
+          const server = this._getServer(serverName);
+          if (!server) {
+            callbackFn(false, "server-not-found");
+            return;
+          }
+          const stopped = server.stop();
           callbackFn(stopped);
         }
       });
@@ -88,7 +97,12 @@ export class ObserverApi {
         (serverName: string, command: string, callbackFn: Function) => {
           if (this._isAuthorized(socket.id)) {
             Logger.log(this._getName(socket.id) + " invoked command!");
-            const sent = this._wrapper.getServer(serverName).console(command);
+            const server = this._getServer(serverName);
+            if (!server) {
+              callbackFn(false, "server-not-found");
+              return;
+            }
+            const sent = server.console(command);
             callbackFn(sent);
           }
         }
@@ -97,14 +111,24 @@ export class ObserverApi {
       socket.on("onlinePlayers", (serverName: string, callbackFn: Function) => {
         if (this._isAuthorized(socket.id)) {
           Logger.log(this._getName(socket.id) + " invoked onlinePlayers!");
-          callbackFn(this._wrapper.getServer(serverName).onlinePlayers);
+          const server = this._getServer(serverName);
+          if (!server) {
+            callbackFn(null, "server-not-found");
+            return;
+          }
+          callbackFn(server.onlinePlayers);
         }
       });
 
       socket.on("status", (serverName: string, callbackFn: Function) => {
         if (this._isAuthorized(socket.id)) {
           Logger.log(this._getName(socket.id) + " invoked status!");
-          callbackFn(this._wrapper.getServer(serverName).status);
+          const server = this._getServer(serverName);
+          if (!server) {
+            callbackFn(null, "server-not-found");
+            return;
+          }
+          callbackFn(server.status);
         }
       });
 
@@ -125,10 +149,18 @@ export class ObserverApi {
                 data.action +
                 "!"
             );
-            let ret: { uuid: string; name: string }[] | boolean;
+            const server = this._getServer(serverName);
+            if (!server) {
+              callbackFn(null, "server-not-found");
+              return;
+            }
+            let ret: {
+              res: { uuid: string; name: string }[] | boolean;
+              error?: string;
+            };
             switch (data.action) {
               case "list":
-                ret = this._wrapper.getServer(serverName).whitelist.array;
+                ret = { res: server.whitelist.array };
                 break;
               case "add":
                 ret = await this._wrapper
@@ -141,13 +173,10 @@ export class ObserverApi {
                   .whitelist.remove(data.username || "");
                 break;
               case "clear":
-                ret = this._wrapper.getServer(serverName).whitelist.clear();
+                ret = server.whitelist.clear();
                 break;
             }
-            callbackFn(
-              ret,
-              this._wrapper.getServer(serverName).whitelist.lastError
-            );
+            callbackFn(ret.res, ret.error);
           }
         }
       );
@@ -167,6 +196,12 @@ export class ObserverApi {
     this._server.listen(port, () => {
       Logger.log("Listening on http://localhost:" + port);
     });
+  }
+
+  private _getServer(serverName: string) {
+    const server = this._wrapper.getServer(serverName);
+    if (!server) Logger.error(`Could not get server ${serverName}`);
+    return server;
   }
 
   private _isAuthorized(id: string): boolean {

@@ -60,9 +60,7 @@ export class ObserverWrapper {
 
   /** Gets an instance of a server */
   getServer(serverName: string) {
-    const server = this._servers[serverName];
-    if (!server) throw new Error(`Server "${serverName}" doesn't exist!`);
-    return server;
+    return this._servers[serverName];
   }
 
   /** Servers name list */

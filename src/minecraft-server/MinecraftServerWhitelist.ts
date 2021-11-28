@@ -6,7 +6,6 @@ import fs from "fs";
 export class MinecraftServerWhitelist {
   private _path: string;
   private _whitelist: { uuid: string; name: string }[] = [];
-  private _lastError = "";
   private _loadError = false;
   private _onlineMode = true;
 
@@ -26,7 +25,7 @@ export class MinecraftServerWhitelist {
   async add(username: string) {
     if (this._loadError) {
       Logger.error("Error adding user to whitelist: Whitelist not loaded!");
-      return false;
+      return { res: false, error: "load" };
     }
     try {
       const player = new MinecraftServerPlayer(username);
@@ -35,22 +34,25 @@ export class MinecraftServerWhitelist {
         : await player.offlineUuid;
       if (this._whitelist.find((v) => v.uuid === uuid)) {
         Logger.error("Error adding user to whitelist: Already in whitelist");
-        this._lastError = "add";
-        return false;
+        return { res: false, error: "add" };
       }
       this._whitelist = [...this._whitelist, { uuid, name: username }];
       this.saveWhitelist();
-      return true;
+      return { res: true };
     } catch (error) {
-      Logger.error("Error adding user to whitelist: Could not get UUID");
-      return false;
+      if (error === "save") {
+        Logger.error("Error clearing whitelist: Could not save whitelist!");
+        return { res: false, error: "save" };
+      }
+      Logger.error("Error removing user from whitelist: Could not get UUID");
+      return { res: false, error: "uuid" };
     }
   }
 
   async remove(username: string) {
     if (this._loadError) {
       Logger.error("Error removing user from whitelist: Whitelist not loaded!");
-      return false;
+      return { res: false, error: "load" };
     }
     try {
       const player = new MinecraftServerPlayer(username);
@@ -59,30 +61,33 @@ export class MinecraftServerWhitelist {
         : await player.offlineUuid;
       if (!this._whitelist.find((v) => v.uuid === uuid)) {
         Logger.error("Error removing user from whitelist: Not in whirelist");
-        this._lastError = "remove";
-        return false;
+        return { res: false, error: "remove" };
       }
       this._whitelist = this._whitelist.filter((v) => v.uuid !== uuid);
       this.saveWhitelist();
-      return true;
+      return { res: true };
     } catch (error) {
+      if (error === "save") {
+        Logger.error("Error clearing whitelist: Could not save whitelist!");
+        return { res: false, error: "save" };
+      }
       Logger.error("Error removing user from whitelist: Could not get UUID");
-      return false;
+      return { res: false, error: "uuid" };
     }
   }
 
   clear() {
     if (this._loadError) {
       Logger.error("Error clearing whitelist: Whitelist not loaded!");
-      return false;
+      return { res: false, error: "load" };
     }
     try {
       this._whitelist = [];
       this.saveWhitelist();
-      return true;
+      return { res: true };
     } catch (error) {
-      Logger.error("Error clearing whitelist: Could not save!");
-      return false;
+      Logger.error("Error clearing whitelist: Could not save whitelist!");
+      return { res: false, error: "save" };
     }
   }
 
@@ -90,7 +95,7 @@ export class MinecraftServerWhitelist {
     try {
       fs.writeFileSync(this._path, JSON.stringify(this._whitelist));
     } catch (error) {
-      throw error;
+      throw "save";
     }
   }
 
@@ -98,14 +103,9 @@ export class MinecraftServerWhitelist {
     try {
       this._whitelist = JSON.parse(fs.readFileSync(this._path, "utf-8"));
     } catch (error) {
-      this._lastError = "load";
       this._loadError = true;
       Logger.error("Error loading whitelist!");
       console.error(error);
     }
-  }
-
-  get lastError() {
-    return this._lastError;
   }
 }
