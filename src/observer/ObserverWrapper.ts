@@ -7,7 +7,7 @@ export class ObserverWrapper {
 
   /**
    * Creates an instance of ObserverWrapper.
-   * @param {ObserverOptions} [options] Observe Options
+   * @param {ObserverOptions} [options] Observe Options.
    */
   constructor(options: ObserverOptions) {
     this._options = options;
@@ -18,47 +18,93 @@ export class ObserverWrapper {
   }
 
   /**
-   * Starts a server
-   * @param {string} serverName Name of the server
-   * @return {Promise<boolean>} Resolves to true if server is starting
+   * Starts all servers.
+   * @return {*} Promise that resolves to an object with the server names as key and if they started as value.
    */
-  start(serverName: string): Promise<boolean> {
-    Logger.log(`Starting server "${serverName}"`);
-    return this.getServer(serverName).start();
+  start(): Promise<{ [serverName: string]: boolean }>;
+  /**
+   * Starts a server.
+   * @param {string} serverName Name of the server.
+   * @return {Promise<boolean>} Promise that resolves to true if the server started.
+   */
+  start(serverName: string): Promise<boolean>;
+  start(
+    serverName?: string
+  ): Promise<{ [serverName: string]: boolean } | boolean> {
+    if (serverName) {
+      Logger.log(`Starting server "${serverName}"`);
+      return this.getServer(serverName).start();
+    } else {
+      Logger.log(`Starting all servers...`);
+      return new Promise(async (resolve, reject) => {
+        const started: { [serverName: string]: boolean } = {};
+        for (const s in this._servers) {
+          try {
+            started[s] = await this.start(s);
+          } catch (e) {
+            reject(e);
+          }
+          resolve(started);
+        }
+      });
+    }
   }
 
   /**
-   * Sends a stop command to a server
-   * @param {string} serverName Name of the server
-   * @return {boolean} true if signal was sent
+   * Sends a stop command to all servers.
+   * @return {*} An object with the server names as key and if the command was sent as value.
    */
-  stop(serverName: string): boolean {
-    return this.getServer(serverName).stop();
-  }
-
-  /** Starts all servers */
-  async startAll() {
-    Logger.log("Starting all servers...");
-    const serversStarted: { [serverName: string]: boolean } = {};
-    for (const serverName in this._servers) {
-      const started = await this.start(serverName);
-      if (!started) Logger.error(`Could not start server "${serverName}"`);
-      serversStarted[serverName] = started;
-    }
-    return serversStarted;
-  }
-
-  /** Sends a stop command to all servers */
-  stopAll() {
-    Logger.log("Sending a stop command to all servers...");
-    for (const serverName in this._servers) {
-      const stopped = this.stop(serverName);
-      if (!stopped)
-        Logger.error(`Could not send stop to server "${serverName}"`);
+  stop(): { [serverName: string]: boolean };
+  /**
+   * Sends a stop command to a server.
+   * @param {string} serverName Name of the server.
+   * @return {boolean} true if signal was sent.
+   */
+  stop(serverName: string): boolean;
+  stop(serverName?: string): { [serverName: string]: boolean } | boolean {
+    if (serverName) {
+      return this.getServer(serverName).stop();
+    } else {
+      const stopped: { [serverName: string]: boolean } = {};
+      for (const s in this._servers) {
+        try {
+          stopped[s] = this.stop(s);
+        } catch (e) {
+          throw e;
+        }
+      }
+      return stopped;
     }
   }
 
-  /** Gets an instance of a server */
+  /**
+   * Get online players from all servers.
+   * @return {*} An object with the server names as key and the server's online players names list as value.
+   */
+  getOnlinePlayers(): { [serverName: string]: string[] };
+  /**
+   * Get online players from a server.
+   * @param {string} serverName Name of the server.
+   * @return {string[]} The server's online players names list.
+   */
+  getOnlinePlayers(serverName: string): string[];
+  getOnlinePlayers(serverName?: string) {
+    if (serverName) {
+      return this._servers[serverName].onlinePlayers;
+    } else {
+      const players: { [serverName: string]: string[] } = {};
+      for (const s in this._servers) {
+        try {
+          players[s] = this.getOnlinePlayers(s);
+        } catch (e) {
+          throw e;
+        }
+      }
+      return players;
+    }
+  }
+
+  /** Gets an instance of a server. */
   getServer(serverName: string) {
     return this._servers[serverName];
   }
