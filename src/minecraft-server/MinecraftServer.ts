@@ -5,7 +5,7 @@ import { Logger } from "../util";
 import { MinecraftServerOptions } from "./MinecraftServerOptions";
 import { MinecraftServerProperties } from "./MinecraftServerProperties";
 
-enum Status {
+export enum Status {
   Offline = "offline",
   Starting = "starting",
   Online = "online",
