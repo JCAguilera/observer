@@ -13,11 +13,20 @@ export class MinecraftServerProperties {
     this._properties = mcServerProps.parse(contents);
   }
 
-  /** Get a value */
+  /**
+   * Gets a value.
+   * @param {string} key Key of the value.
+   * @return {*}  {(string | boolean | number)} Parsed value.
+   */
   get(key: string): string | boolean | number {
     return this._properties[key];
   }
 
+  /**
+   * Sets a value and saves the server.properties file.
+   * @param {string} key Key of the value.
+   * @param {(string | boolean | number)} value The value.
+   */
   set(key: string, value: string | boolean | number) {
     this._properties[key] = value;
     try {
