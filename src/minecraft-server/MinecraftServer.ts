@@ -1,9 +1,10 @@
 import { MinecraftServerWhitelist } from "./MinecraftServerWhitelist";
 import { MinecraftServerEventParser } from "./MinecraftServerEvents";
-import { Config, DeepPartial, ScriptServer } from "@scriptserver/core";
-import { Logger } from "../util";
 import { MinecraftServerOptions } from "./MinecraftServerOptions";
 import { MinecraftServerProperties } from "./MinecraftServerProperties";
+import { MinecraftServerFiles } from "./MinecraftServerFiles";
+import { Config, DeepPartial, ScriptServer } from "@scriptserver/core";
+import { Logger } from "../util";
 
 export enum Status {
   Offline = "offline",
@@ -42,6 +43,8 @@ export class MinecraftServer {
   private _timeout = 0; // mins
   /** Event parser */
   private _eventParser: MinecraftServerEventParser;
+  /** Server files */
+  private _files: MinecraftServerFiles;
   /** Server properties */
   private _properties: MinecraftServerProperties;
   /** Whitelist */
@@ -57,11 +60,13 @@ export class MinecraftServer {
       options.type,
       options.events
     );
+    // Setup server files
+    this._files = new MinecraftServerFiles(options.path);
     // Setup server properties
-    this._properties = new MinecraftServerProperties(options.path);
+    this._properties = new MinecraftServerProperties(this._files.path);
     // Setup whitelist
     this._whitelist = new MinecraftServerWhitelist(
-      options.path,
+      this._files.path,
       this._properties.get("online_mode") as boolean
     );
     // Setup script server
@@ -224,6 +229,13 @@ export class MinecraftServer {
     return true;
   }
 
+  /** Sets the server status */
+  private _setStatus(status: Status) {
+    this._status = status;
+    this._events.status(status);
+    this._events.any("status", status);
+  }
+
   /** Server status */
   get status() {
     return this._status;
@@ -234,13 +246,6 @@ export class MinecraftServer {
     return this._online.slice();
   }
 
-  /** Sets the server status */
-  private _setStatus(status: Status) {
-    this._status = status;
-    this._events.status(status);
-    this._events.any("status", status);
-  }
-
   get name() {
     return this._config.name;
   }
@@ -249,11 +254,15 @@ export class MinecraftServer {
     return this._config;
   }
 
-  get whitelist() {
-    return this._whitelist;
+  get files() {
+    return this._files;
   }
 
   get properties() {
     return this._properties;
+  }
+
+  get whitelist() {
+    return this._whitelist;
   }
 }
